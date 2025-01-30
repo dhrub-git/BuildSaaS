@@ -1,0 +1,178 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  CLIENT
+  ARCHITECT
+  BUILDER
+  DESIGNER
+  ADMIN
+}
+
+enum ProjectStatus {
+  DRAFT
+  PUBLISHED
+  COMPLETED
+  ARCHIVED
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String
+  role          UserRole
+  password      String
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  image         String?   // Profile image URL
+  bio           String?   @db.Text
+  location      String?
+  website       String?
+  phoneNumber   String?
+  
+  // Professional specific fields
+  company           String?
+  yearsExperience  Int?
+  licenses         String[]
+  certifications   String[]
+  specialties      String[]
+  
+  // Relations
+  projects         Project[]        @relation("CreatedProjects")
+  savedProjects    Project[]        @relation("SavedProjects")
+  reviews          Review[]         @relation("WrittenReviews")
+  receivedReviews  Review[]         @relation("ReceivedReviews")
+  sentMessages     Message[]        @relation("SentMessages")
+  receivedMessages Message[]        @relation("ReceivedMessages")
+  bookings         Booking[]        @relation("ProfessionalBookings")
+  clientBookings   Booking[]        @relation("ClientBookings")
+  profileViews     ProfileView[]
+}
+
+model Project {
+  id          String        @id @default(cuid())
+  title       String
+  description String        @db.Text
+  status      ProjectStatus @default(PUBLISHED)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  
+  // Project details
+  location    String
+  budget      Float
+  startDate   DateTime?
+  endDate     DateTime?
+  sqFootage   Float?
+  style       String?
+  images      String[]      // Array of image URLs
+  
+  // Relations
+  creator     User          @relation("CreatedProjects", fields: [creatorId], references: [id])
+  creatorId   String
+  savedBy     User[]        @relation("SavedProjects")
+  categories  Category[]
+  reviews     Review[]
+  views       ProjectView[]
+
+  @@index([creatorId])
+}
+
+model Category {
+  id          String    @id @default(cuid())
+  name        String    @unique
+  description String?
+  projects    Project[]
+}
+
+model Review {
+  id          String   @id @default(cuid())
+  rating      Int      @db.SmallInt
+  comment     String   @db.Text
+  createdAt   DateTime @default(now())
+  
+  // Relations
+  project     Project  @relation(fields: [projectId], references: [id])
+  projectId   String
+  author      User     @relation("WrittenReviews", fields: [authorId], references: [id])
+  authorId    String
+  professional User    @relation("ReceivedReviews", fields: [professionalId], references: [id])
+  professionalId String
+
+  @@index([projectId])
+  @@index([authorId])
+  @@index([professionalId])
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+  read      Boolean  @default(false)
+  
+  // Relations
+  sender    User     @relation("SentMessages", fields: [senderId], references: [id])
+  senderId  String
+  receiver  User     @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  receiverId String
+
+  @@index([senderId])
+  @@index([receiverId])
+}
+
+model Booking {
+  id          String        @id @default(cuid())
+  date        DateTime
+  duration    Int          // Duration in minutes
+  status      BookingStatus @default(PENDING)
+  notes       String?       @db.Text
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  
+  // Relations
+  professional User         @relation("ProfessionalBookings", fields: [professionalId], references: [id])
+  professionalId String
+  client       User         @relation("ClientBookings", fields: [clientId], references: [id])
+  clientId     String
+
+  @@index([professionalId])
+  @@index([clientId])
+}
+
+// Analytics Models
+model ProjectView {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  
+  // Relations
+  project   Project  @relation(fields: [projectId], references: [id])
+  projectId String
+
+  @@index([projectId])
+}
+
+model ProfileView {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  
+  // Relations
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+
+  @@index([userId])
+}

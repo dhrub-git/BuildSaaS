@@ -148,6 +148,7 @@ export default function ProjectsPage() {
                                 { label: 'Completion', value: project.completion },
                             ]}
                             badges={project.badges}
+                            href={`/projects/${project.id}`}
                         />
                     ))}
                 </div>

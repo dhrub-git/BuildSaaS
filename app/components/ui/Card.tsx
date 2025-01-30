@@ -1,5 +1,6 @@
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
+import Link from 'next/link';
 
 interface CardProps {
     className?: string;
@@ -10,6 +11,7 @@ interface CardProps {
     badges?: string[];
     hoverEffect?: boolean;
     onClick?: () => void;
+    href?: string;
 }
 
 export function Card({
@@ -21,8 +23,9 @@ export function Card({
     badges,
     hoverEffect = true,
     onClick,
+    href,
 }: CardProps) {
-    return (
+    const content = (
         <div
             onClick={onClick}
             className={cn(
@@ -67,4 +70,10 @@ export function Card({
             </div>
         </div>
     );
+
+    if (href) {
+        return <Link href={href}>{content}</Link>;
+    }
+
+    return content;
 }
